@@ -36,7 +36,7 @@ function Card({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Pill({ children }: { children: string }) {
+function Pill({ children }: { children: React.ReactNode }) {
   return (
     <span
       style={{
