@@ -285,16 +285,25 @@ export function generateRequestId(): string {
  */
 export function getRecoveryAction(errorCode: ErrorCode): string {
   const actions: Record<ErrorCode, string> = {
-    [ERROR_CODES.INVALID_DATE]: '请检查并修正出生日期',
-    [ERROR_CODES.INVALID_TIME]: '请检查并修正出生时间',
-    [ERROR_CODES.INVALID_TIMEZONE]: '请重新选择时区',
-    [ERROR_CODES.MISSING_REQUIRED_FIELD]: '请填写完整信息',
-    [ERROR_CODES.INVALID_CHART_DATA]: '请返回首页重新排盘',
-    [ERROR_CODES.CALCULATION_FAILED]: '请稍后重试或联系技术支持',
-    [ERROR_CODES.AI_SERVICE_UNAVAILABLE]: '请稍后重试或刷新页面',
-    [ERROR_CODES.AI_QUOTA_EXCEEDED]: '请等待一段时间后重试',
-    [ERROR_CODES.TIMEOUT]: '请检查网络连接后重试',
-  };
+  [ERROR_CODES.INVALID_DATE]: '请检查并修正出生日期',
+  [ERROR_CODES.INVALID_TIME]: '请检查并修正出生时间',
+  [ERROR_CODES.INVALID_TIMEZONE]: '请重新选择时区',
+  [ERROR_CODES.MISSING_REQUIRED_FIELD]: '请填写所有必填信息',
+  [ERROR_CODES.INVALID_CHART_DATA]: '命盘数据异常，请重新计算',
+  [ERROR_CODES.CALCULATION_FAILED]: '计算失败，请稍后重试',
+
+  // —— AI / 服务类错误 ——
+  [ERROR_CODES.AI_SERVICE_UNAVAILABLE]: 'AI 服务暂时不可用，请稍后再试',
+  [ERROR_CODES.AI_QUOTA_EXCEEDED]: 'AI 使用额度已达上限，请稍后再试',
+  [ERROR_CODES.TIMEOUT]: '请求超时，请检查网络后重试',
+
+  // —— 🔴 缺失的 5 个（关键）——
+  [ERROR_CODES.LIBRARY_ERROR]: '算法库异常，请稍后重试',
+  [ERROR_CODES.DATA_CONVERSION_ERROR]: '数据转换失败，请重新提交',
+  [ERROR_CODES.AI_RESPONSE_INVALID]: 'AI 返回结果异常，请重试',
+  [ERROR_CODES.INTERNAL_SERVER_ERROR]: '系统内部错误，请稍后重试',
+  [ERROR_CODES.SERVICE_UNAVAILABLE]: '服务暂不可用，请稍后再试',
+};
 
   return actions[errorCode] || '请刷新页面或联系技术支持';
 }
