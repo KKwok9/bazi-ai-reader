@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>八字计算 API 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .chart-display {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .pillar {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-width: 120px;
+        }
+        .pillar-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .ganzhi {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 5px 0;
+        }
+        .element {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .tengod {
+            color: #dc3545;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>八字计算 API 测试</h1>
+        
+        <form id="baziForm">
+            <div class="form-group">
+                <label for="birthYear">出生年份:</label>
+                <input type="number" id="birthYear" min="1900" max="2100" value="1990" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="birthMonth">出生月份:</label>
+                <input type="number" id="birthMonth" min="1" max="12" value="5" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="birthDay">出生日期:</label>
+                <input type="number" id="birthDay" min="1" max="31" value="15" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="birthHour">出生小时:</label>
+                <input type="number" id="birthHour" min="0" max="23" value="14" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="birthMinute">出生分钟:</label>
+                <input type="number" id="birthMinute" min="0" max="59" value="30" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="timezone">时区:</label>
+                <select id="timezone">
+                    <option value="Asia/Shanghai">北京时间 (Asia/Shanghai)</option>
+                    <option value="Asia/Hong_Kong">香港时间 (Asia/Hong_Kong)</option>
+                    <option value="Asia/Taipei">台北时间 (Asia/Taipei)</option>
+                    <option value="UTC">协调世界时 (UTC)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="gender">性别 (可选):</label>
+                <select id="gender">
+                    <option value="">不选择</option>
+                    <option value="male">男</option>
+                    <option value="female">女</option>
+                </select>
+            </div>
+            
+            <button type="submit" id="submitBtn">计算八字</button>
+        </form>
+        
+        <div id="result" class="result" style="display: none;"></div>
+        <div id="chartDisplay" class="chart-display" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.getElementById('baziForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+            const chartDiv = document.getElementById('chartDisplay');
+            
+            // 收集表单数据
+            const formData = {
+                birthYear: parseInt(document.getElementById('birthYear').value),
+                birthMonth: parseInt(document.getElementById('birthMonth').value),
+                birthDay: parseInt(document.getElementById('birthDay').value),
+                birthHour: parseInt(document.getElementById('birthHour').value),
+                birthMinute: parseInt(document.getElementById('birthMinute').value),
+                timezone: document.getElementById('timezone').value,
+                gender: document.getElementById('gender').value || undefined
+            };
+            
+            // 显示加载状态
+            submitBtn.disabled = true;
+            submitBtn.textContent = '计算中...';
+            resultDiv.className = 'result loading';
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在计算八字，请稍候...';
+            chartDiv.style.display = 'none';
+            
+            try {
+                // 发送 API 请求
+                const response = await fetch('/api/chart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 显示成功结果
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '计算成功！\n\n' + JSON.stringify(result.data, null, 2);
+                    
+                    // 显示图形化八字盘
+                    displayChart(result.data);
+                    
+                    // 自动调用 AI 解读
+                    interpretChart(result.data);
+                } else {
+                    // 显示错误信息
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '计算失败：\n\n' + JSON.stringify(result.error, null, 2);
+                    chartDiv.style.display = 'none';
+                }
+                
+            } catch (error) {
+                // 显示网络错误
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '网络错误：' + error.message;
+                chartDiv.style.display = 'none';
+            } finally {
+                // 恢复按钮状态
+                submitBtn.disabled = false;
+                submitBtn.textContent = '计算八字';
+            }
+        });
+        
+        function displayChart(chartData) {
+            const chartDiv = document.getElementById('chartDisplay');
+            
+            const html = `
+                <h3>八字命盘</h3>
+                <div style="text-align: center;">
+                    <div class="pillar">
+                        <div class="pillar-title">年柱</div>
+                        <div class="ganzhi">${chartData.pillars.year.heavenly}${chartData.pillars.year.earthly}</div>
+                        <div class="element">${chartData.elements.year}</div>
+                        <div class="tengod">${chartData.tenGods.year}</div>
+                    </div>
+                    <div class="pillar">
+                        <div class="pillar-title">月柱</div>
+                        <div class="ganzhi">${chartData.pillars.month.heavenly}${chartData.pillars.month.earthly}</div>
+                        <div class="element">${chartData.elements.month}</div>
+                        <div class="tengod">${chartData.tenGods.month}</div>
+                    </div>
+                    <div class="pillar">
+                        <div class="pillar-title">日柱</div>
+                        <div class="ganzhi">${chartData.pillars.day.heavenly}${chartData.pillars.day.earthly}</div>
+                        <div class="element">${chartData.elements.day}</div>
+                        <div class="tengod">${chartData.tenGods.day}</div>
+                    </div>
+                    <div class="pillar">
+                        <div class="pillar-title">时柱</div>
+                        <div class="ganzhi">${chartData.pillars.hour.heavenly}${chartData.pillars.hour.earthly}</div>
+                        <div class="element">${chartData.elements.hour}</div>
+                        <div class="tengod">${chartData.tenGods.hour}</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <strong>日主：${chartData.elements.dayMaster}</strong>
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; color: #666; text-align: center;">
+                    计算时间：${new Date(chartData.timestamp).toLocaleString('zh-CN')}
+                </div>
+            `;
+            
+            chartDiv.innerHTML = html;
+            chartDiv.style.display = 'block';
+        }
+        
+        // AI 解读功能
+        async function interpretChart(chartData) {
+            const interpretDiv = document.createElement('div');
+            interpretDiv.id = 'interpretResult';
+            interpretDiv.className = 'result loading';
+            interpretDiv.style.marginTop = '20px';
+            interpretDiv.textContent = '正在生成 AI 解读...';
+            
+            document.querySelector('.container').appendChild(interpretDiv);
+            
+            try {
+                const response = await fetch('/api/interpret', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chartData: chartData,
+                        focusAreas: ['personality', 'fortune']
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    interpretDiv.className = 'result success';
+                    interpretDiv.innerHTML = `
+                        <h3>AI 解读结果</h3>
+                        <div style="margin-top: 15px;">
+                            <h4>性格特征：</h4>
+                            <p style="line-height: 1.6; margin-bottom: 15px;">${result.data.personality}</p>
+                            
+                            <h4>运势概述：</h4>
+                            <p style="line-height: 1.6; margin-bottom: 15px;">${result.data.fortune}</p>
+                            
+                            <h4>建议指导：</h4>
+                            <p style="line-height: 1.6; margin-bottom: 15px;">${result.data.suggestions}</p>
+                            
+                            <div style="font-size: 12px; color: #666; margin-top: 20px;">
+                                生成时间：${new Date(result.data.generatedAt).toLocaleString('zh-CN')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    interpretDiv.className = 'result error';
+                    interpretDiv.innerHTML = `
+                        <h3>AI 解读失败</h3>
+                        <p>${result.error.message}</p>
+                        <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                            错误代码：${result.error.code}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                interpretDiv.className = 'result error';
+                interpretDiv.innerHTML = `
+                    <h3>AI 解读失败</h3>
+                    <p>网络错误：${error.message}</p>
+                `;
+            }
+        }
+        
+        // 预设测试案例
+        const testCases = [
+            { name: '1990年5月15日14:30', year: 1990, month: 5, day: 15, hour: 14, minute: 30 },
+            { name: '2000年1月1日12:00', year: 2000, month: 1, day: 1, hour: 12, minute: 0 },
+            { name: '1985年12月25日6:30', year: 1985, month: 12, day: 25, hour: 6, minute: 30 }
+        ];
+        
+        // 添加快速测试按钮
+        const quickTestDiv = document.createElement('div');
+        quickTestDiv.style.marginTop = '20px';
+        quickTestDiv.innerHTML = '<h3>快速测试案例：</h3>';
+        
+        testCases.forEach(testCase => {
+            const btn = document.createElement('button');
+            btn.textContent = testCase.name;
+            btn.style.margin = '5px';
+            btn.style.width = 'auto';
+            btn.style.padding = '8px 15px';
+            btn.onclick = () => {
+                document.getElementById('birthYear').value = testCase.year;
+                document.getElementById('birthMonth').value = testCase.month;
+                document.getElementById('birthDay').value = testCase.day;
+                document.getElementById('birthHour').value = testCase.hour;
+                document.getElementById('birthMinute').value = testCase.minute;
+            };
+            quickTestDiv.appendChild(btn);
+        });
+        
+        document.querySelector('.container').appendChild(quickTestDiv);
+    </script>
+</body>
+</html>
